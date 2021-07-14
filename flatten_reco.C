@@ -30,7 +30,6 @@ void flatten_reco()
   tree->SetBranchAddress( "rec.mc.nu.bjorkenX", &bjX );
   tree->SetBranchAddress( "rec.mc.nu.inelasticityY", &intY );
   tree->SetBranchAddress( "rec.mc.nu.genie_intcode", &nuScat );
-  //tree->SetBranchAddress( "rec.mc.nu.hitnuc", hitNuc );
   tree->SetBranchAddress( "rec.mc.nu.prim..length", &nPrim );
   tree->SetBranchAddress( "rec.mc.nu.prim.pdg", &primPdg );
   tree->SetBranchAddress( "rec.mc.nu.prim.genE", &primE );
