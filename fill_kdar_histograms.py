@@ -148,7 +148,7 @@ def Ttree_loop(TTree, hdict_sig, hdict_bkg):
               
               
                # signal fills
-               if entry.Enu > 0.2355317 and entry.Enu < 0.235319:
+               if entry.Enu >= 0.2355317 and entry.Enu <= 0.2355319:
                    hdict_sig["omega"].Fill(omega*1000.)
                    hdict_sig["Emu"].Fill( (muon_e)*1000. ) # convert to MeV
                    hdict_sig["omega and q"].Fill(omega*1000., q*1000)
