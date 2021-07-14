@@ -2,228 +2,194 @@ import ROOT
 import numpy as np
 import random
 import math
+ROOT.gROOT.SetBatch(1)
 
 res = 0.05     #(%)
 p_thresh = 0.05
 thresh = 0.03 #(GeV)
 proton_thresh = 0.05
 mean = 1
-N = 188075 #(entries)
-norm = (4500/N) #(expected events per year)
-TTree_1 = "/icarus/data/users/marshalc/ntuples/numi_wTarget.root"
+sig_per_yr = 4500
+filename = "/icarus/data/users/marshalc/ntuples/numi_wTarget.root"
+dump_dir = ROOT.TVector3(0.39984193, 0.70939696, 0.58041570)
 
+def TTree_loop(tree, hdict_sig, hdict_bkg):                            
 
-# "Batch mode" means do not display graphics on the screen
-ROOT.gROOT.SetBatch(1)
-def Ttree_loop(TTree, hdict_sig, hdict_bkg):                            
-   if __name__ == "__main__":
-       tf = ROOT.TFile( TTree )
-       tree = tf.Get( "tree" )
-       for entry in tree:
-           is_cc = False
-           muon_E = None
-           #signal event threshold  
-           reco1_thresh = ROOT.TVector3(0., 0., 0.)
-           reco2_thresh = ROOT.TVector3(0., 0., 0.)
-           reco3_thresh = ROOT.TVector3(0., 0., 0.)
-           if entry.Enu < 0.5:
-               for i in range (entry.nfsp):
-                   if entry.pdg[i] < 9999:
-                       reco1_thresh[0] += entry.px[i]
-                       reco1_thresh[1] += entry.py[i]
-                       reco1_thresh[2] += entry.pz[i]
+    n_signal = 0
+    for entry in tree:
+        is_cc = False
+        muon_E = None
+        #signal event threshold  
+        reco1_thresh = ROOT.TVector3(0., 0., 0.)
+        reco2_thresh = ROOT.TVector3(0., 0., 0.)
+        reco3_thresh = ROOT.TVector3(0., 0., 0.)
+        if entry.Enu < 0.5:
+            for i in range (entry.nfsp):
+                if entry.pdg[i] < 9999:
+                    reco1_thresh[0] += entry.px[i]
+                    reco1_thresh[1] += entry.py[i]
+                    reco1_thresh[2] += entry.pz[i]
                         
-                   if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:
+                if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:
                    
-                       reco2_thresh[0] += entry.px[i]
-                       reco2_thresh[1] += entry.py[i]
-                       reco2_thresh[2] += entry.pz[i]
+                    reco2_thresh[0] += entry.px[i]
+                    reco2_thresh[1] += entry.py[i]
+                    reco2_thresh[2] += entry.pz[i]
                    
-                       reco3_thresh[0] += entry.px[i]
-                       reco3_thresh[1] += entry.py[i]
-                       reco3_thresh[2] += entry.pz[i]
+                    reco3_thresh[0] += entry.px[i]
+                    reco3_thresh[1] += entry.py[i]
+                    reco3_thresh[2] += entry.pz[i]
                                      
-                   if entry.pdg[i] == 2212:
-                       reco2_thresh[0] += entry.px[i]
-                       reco2_thresh[1] += entry.py[i]
-                       reco2_thresh[2] += entry.pz[i]      
+                if entry.pdg[i] == 2212:
+                    reco2_thresh[0] += entry.px[i]
+                    reco2_thresh[1] += entry.py[i]
+                    reco2_thresh[2] += entry.pz[i]      
                       
-                       if entry.E[i] - 0.93826>proton_thresh:                                                                             
-                           reco3_thresh[0] += (entry.px[i])
-                           reco3_thresh[1] += (entry.py[i])
-                           reco3_thresh[2] += (entry.pz[i])
+                    if entry.E[i] - 0.93826>proton_thresh:                                                                             
+                        reco3_thresh[0] += (entry.px[i])
+                        reco3_thresh[1] += (entry.py[i])
+                        reco3_thresh[2] += (entry.pz[i])
                          
-           true_nup = ROOT.TVector3(entry.nuPx, entry.nuPy, entry.nuPz)
-           reco_FS = ROOT.TVector3(0., 0., 0.)
-           reco_pro_thresh = ROOT.TVector3(0., 0., 0.)
-           reco_FS_neu = ROOT.TVector3(0., 0., 0.)
-           reco_thresh = ROOT.TVector3(0., 0., 0.)
+        true_nup = ROOT.TVector3(entry.nuPx, entry.nuPy, entry.nuPz)
+        reco_FS = ROOT.TVector3(0., 0., 0.)
+        reco_pro_thresh = ROOT.TVector3(0., 0., 0.)
+        reco_FS_neu = ROOT.TVector3(0., 0., 0.)
+        reco_thresh = ROOT.TVector3(0., 0., 0.)
            
-           #muon energy threshold vectors
-           reco1_sum = ROOT.TVector3(0., 0., 0.)
-           reco2_sum = ROOT.TVector3(0., 0., 0.)
-           reco3_sum = ROOT.TVector3(0., 0., 0.)
-           for i in range(entry.nfsp):
-           
-               if entry.pdg[i] == 13:
-                   if entry.E[i] < 0.235 :
-                       emu_thresh = entry.E[i]
-                        
-                       if entry.pdg[i] < 9999 :
-                           reco1_sum[0] += entry.px[i]
-                           reco1_sum[1] += entry.py[i]
-                           reco1_sum[2] += entry.pz[i]
+        #muon energy threshold vectors
+        reco1_sum = ROOT.TVector3(0., 0., 0.)
+        reco2_sum = ROOT.TVector3(0., 0., 0.)
+        reco3_sum = ROOT.TVector3(0., 0., 0.)
+        for i in range(entry.nfsp):
+          
+            if entry.pdg[i] == 13:
+                if entry.E[i] < 0.235 :
+                    emu_thresh = entry.E[i]
+                     
+                    if entry.pdg[i] < 9999 :
+                        reco1_sum[0] += entry.px[i]
+                        reco1_sum[1] += entry.py[i]
+                        reco1_sum[2] += entry.pz[i]
                  
-                       if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:        
-                           reco2_sum[0] += entry.px[i]
-                           reco2_sum[1] += entry.py[i]
-                           reco2_sum[2] += entry.pz[i]
+                    if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:        
+                        reco2_sum[0] += entry.px[i]
+                        reco2_sum[1] += entry.py[i]
+                        reco2_sum[2] += entry.pz[i]
                    
-                           reco3_sum[0] += entry.px[i]
-                           reco3_sum[1] += entry.py[i]
-                           reco3_sum[2] += entry.pz[i]
+                        reco3_sum[0] += entry.px[i]
+                        reco3_sum[1] += entry.py[i]
+                        reco3_sum[2] += entry.pz[i]
                                      
-                       if entry.pdg[i] == 2212:                       
-                           reco2_sum[0] += entry.px[i]
-                           reco2_sum[1] += entry.py[i]
-                           reco2_sum[2] += entry.pz[i]      
+                    if entry.pdg[i] == 2212:                       
+                        reco2_sum[0] += entry.px[i]
+                        reco2_sum[1] += entry.py[i]
+                        reco2_sum[2] += entry.pz[i]      
                       
-                       if entry.E[i] - 0.93826 > proton_thresh:      
+                    if entry.E[i] - 0.93826 > proton_thresh:      
                                                                                               
-                           reco3_sum[0] += (entry.px[i])
-                           reco3_sum[1] += (entry.py[i])
-                           reco3_sum[2] += (entry.pz[i])       
+                        reco3_sum[0] += (entry.px[i])
+                        reco3_sum[1] += (entry.py[i])
+                        reco3_sum[2] += (entry.pz[i])       
                
-               if entry.pdg[i] < 9999 :
+            if entry.pdg[i] < 9999 :
                  
-                   reco_FS[0] += entry.px[i]
-                   reco_FS[1] += entry.py[i]
-                   reco_FS[2] += entry.pz[i]
+                reco_FS[0] += entry.px[i]
+                reco_FS[1] += entry.py[i]
+                reco_FS[2] += entry.pz[i]
                  
-                   
+                  
               
-               if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:
+            if entry.pdg[i] != 2112 and entry.pdg[i] != 2212:
                    
-                   reco_FS_neu[0] += entry.px[i]
-                   reco_FS_neu[1] += entry.py[i]
-                   reco_FS_neu[2] += entry.pz[i]
+                reco_FS_neu[0] += entry.px[i]
+                reco_FS_neu[1] += entry.py[i]
+                reco_FS_neu[2] += entry.pz[i]
                    
-                   reco_thresh[0] += entry.px[i]
-                   reco_thresh[1] += entry.py[i]
-                   reco_thresh[2] += entry.pz[i]
+                reco_thresh[0] += entry.px[i]
+                reco_thresh[1] += entry.py[i]
+                reco_thresh[2] += entry.pz[i]
                                      
-               if entry.pdg[i] == 2212:
-                   proton_e = entry.E[i]  
-                   reco_FS_neu[0] += entry.px[i]
-                   reco_FS_neu[1] += entry.py[i]
-                   reco_FS_neu[2] += entry.pz[i]      
+            if entry.pdg[i] == 2212:
+                proton_e = entry.E[i]  
+                reco_FS_neu[0] += entry.px[i]
+                reco_FS_neu[1] += entry.py[i]
+                reco_FS_neu[2] += entry.pz[i]      
                       
-                   if proton_e - 0.93826 > proton_thresh:      
+                if proton_e - 0.93826 > proton_thresh:      
                                                                                 
-                       reco_thresh[0] += (entry.px[i])
-                       reco_thresh[1] += (entry.py[i])
-                       reco_thresh[2] += (entry.pz[i])
+                    reco_thresh[0] += (entry.px[i])
+                    reco_thresh[1] += (entry.py[i])
+                    reco_thresh[2] += (entry.pz[i])
                               
-               if entry.pdg[i] == 13:
-                   is_cc = True
-                   muon_e = entry.E[i]
-                   muon_px = entry.px[i]
-                   muon_py = entry.py[i]
-                   muon_pz = entry.pz[i]
-               
+            if entry.pdg[i] == 13:
+                is_cc = True
+                muon_e = entry.E[i]
+                muon_px = entry.px[i]
+                muon_py = entry.py[i]
+                muon_pz = entry.pz[i]
                 
-                   if (muon_e - 0.105) > thresh:
-                       muon_ke = (muon_e - 0.105)
-                       x = random.gauss(mean, res)
-                       Emu_rec = (muon_ke) * x
+                if (muon_e - 0.105) > thresh:
+                    muon_ke = (muon_e - 0.105)
+                    x = random.gauss(mean, res)
+                    Emu_rec = (muon_ke) * x
 
-           # Make a cut on CC events
-           if is_cc:
+        # Make a cut on CC events
+        if is_cc:
               
-               mu_p = ROOT.TVector3(muon_px, muon_py, muon_pz)
-               nu_p = ROOT.TVector3(entry.nuPx, entry.nuPy, entry.nuPz)
-               theta = mu_p.Angle(nu_p)
-               omega = (entry.Enu - muon_e)*100
-               q =  (((((((entry.nuPx) - (muon_px))**2) + (((entry.nuPy) - (muon_py))**2) +((entry.nuPz) - (muon_pz))**2)))**0.5)
+            mu_p = ROOT.TVector3(muon_px, muon_py, muon_pz)
+            nu_p = ROOT.TVector3(entry.nuPx, entry.nuPy, entry.nuPz)
+            theta = mu_p.Angle(nu_p)
+            omega = (entry.Enu - muon_e)*100
+            q =  (((((((entry.nuPx) - (muon_px))**2) + (((entry.nuPy) - (muon_py))**2) +((entry.nuPz) - (muon_pz))**2)))**0.5)
               
               
-               # signal fills
-               if entry.Enu >= 0.2355317 and entry.Enu <= 0.2355319:
-                   hdict_sig["omega"].Fill(omega*1000.)
-                   hdict_sig["Emu"].Fill( (muon_e)*1000. ) # convert to MeV
-                   hdict_sig["omega and q"].Fill(omega*1000., q*1000)
-                   hdict_sig["omega and muon angle"].Fill(omega*1000., (theta))
-                   hdict_sig["muon energy and angle"].Fill((Emu_rec)*1000, (theta))
-                   hdict_sig["rec-muon energy and true muon E"].Fill((muon_ke)*1000, (Emu_rec)*1000)
-                   hdict_sig["fractional residual"].Fill((Emu_rec - (muon_ke))/(muon_ke), (muon_ke))
-                   hdict_sig["omega(rec) and q"].Fill((entry.Enu - (Emu_rec + 0.105))*1000,  q*1000)
-                   hdict_sig["omega (MeV) vs. q (MeV/C)"].Fill(omega*1000, q*1000)
-                   hdict_sig["omega (MeV) vs. q (MeV/c) (rec)"].Fill((entry.Enu - (Emu_rec + 0.105))*1000,  q*1000)
-                   hdict_sig["true neutrino angles"].Fill(math.atan((true_nup[0])/true_nup[2]) , math.atan((true_nup[1])/true_nup[2]))
-                   hdict_sig["reconstructed neutrino angle"].Fill(math.atan((reco_FS[0])/reco_FS[2]) , math.atan((reco_FS[1])/reco_FS[2]))
-                   hdict_sig["reco.neutrino angle (no neutron)"].Fill(math.atan((reco_FS_neu[0])/reco_FS_neu[2]) , math.atan((reco_FS_neu[1])/reco_FS_neu[2]))
-                   hdict_sig["reco. neutrino angle (signal proton threshold)"].Fill(math.atan((reco_thresh[0])/reco_thresh[2]) , math.atan((reco_thresh[1])/reco_thresh[2]))
-                   hdict_sig["reco. assumption 1 signal wrst. beam dump"].Fill(math.cos(reco_FS.Angle(beamdump_nu)))
-                   hdict_sig["reco. assumption 2 wrst. beam dump"].Fill(math.cos(reco_FS_neu.Angle(beamdump_nu)))
-                   hdict_sig["reco. assumption 3 wrst. beam dump"].Fill(math.cos(reco_thresh.Angle(beamdump_nu)))
-                   hdict_sig["muon energy vs. beam dump angle (sig 1) "].Fill(muon_e*1000, math.cos(reco_FS.Angle(beamdump_nu)))
-                   hdict_sig["muon energy vs. beam dump angle (sig 2) "].Fill(muon_e*1000, math.cos(reco_FS_neu.Angle(beamdump_nu)))
-                   hdict_sig["muon energy vs. beam dump angle (sig 3) "].Fill(muon_e*1000, math.cos(reco_thresh.Angle(beamdump_nu)))
-                   hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 1)"].Fill(emu_thresh*1000, math.cos(reco1_sum.Angle(beamdump_nu)))
-                   hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 2)"].Fill(emu_thresh*1000, math.cos(reco2_sum.Angle(beamdump_nu)))
-                   hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 3)"].Fill(emu_thresh*1000, math.cos(reco3_sum.Angle(beamdump_nu)))
-                   
-               else:
-                   #background fills
-                   hdict_bkg["neutrino angle wrst. Z"].Fill(math.atan((true_nup[0])/true_nup[2]), math.atan((true_nup[1])/true_nup[2]))
-                   
-                   hdict_bkg["reco neutrino angle"].Fill(math.atan((reco_FS[0])/reco_FS[2]), math.atan((reco_FS[1])/reco_FS[2]))
-                   
-                   hdict_bkg["reco. neutrino angle (no neutron)"].Fill(math.atan((reco_FS_neu[0])/reco_FS_neu[2]) , math.atan((reco_FS_neu[1])/reco_FS_neu[2]))
-                   
-                   hdict_bkg["reco. neutrino angle (proton threshold)"].Fill(math.atan((reco_thresh[0])/reco_thresh[2]) , math.atan((reco_thresh[1])/reco_thresh[2]))
-                   
-                   hdict_bkg["beam dump angle (reco. 1)"].Fill(math.cos(reco_FS.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["beam dump angle (reco. 2)"].Fill(math.cos(reco_FS_neu.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["beam dump angle (reco. 3)"].Fill(math.cos(reco_thresh.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["beam dump angle (muon thresh reco. 1)"].Fill(math.cos(reco1_thresh.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["beam dump angle (muon thresh reco. 2)"].Fill(math.cos(reco2_thresh.Angle(beamdump_nu)))
-                    
-                   hdict_bkg["beam dump angle (muon thresh reco. 3)"].Fill(math.cos(reco3_thresh.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy vs. beam dump angle (1) "].Fill(muon_e*1000, math.cos(reco_FS.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy vs. beam dump angle (2) "].Fill(muon_e*1000, math.cos(reco_FS_neu.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy vs. beam dump angle (3)"].Fill(muon_e*1000, math.cos(reco_thresh.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy (with threshold) vs. beamdump angle (1)"].Fill(emu_thresh*1000, math.cos(reco1_sum.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy (with threshold) vs. beamdump angle (2)"].Fill(emu_thresh*1000, math.cos(reco2_sum.Angle(beamdump_nu)))
-                   
-                   hdict_bkg["muon energy (with threshold) vs. beamdump angle (3)"].Fill(emu_thresh*1000, math.cos(reco3_sum.Angle(beamdump_nu)))
+            # signal fills
+            if entry.Enu >= 0.2355317 and entry.Enu <= 0.2355319:
+                n_signal += 1
+                hdict_sig["omega"].Fill(omega*1000.)
+                hdict_sig["Emu"].Fill( (muon_e)*1000. ) # convert to MeV
+                hdict_sig["omega and q"].Fill(omega*1000., q*1000)
+                hdict_sig["omega and muon angle"].Fill(omega*1000., (theta))
+                hdict_sig["muon energy and angle"].Fill((Emu_rec)*1000, (theta))
+                hdict_sig["rec-muon energy and true muon E"].Fill((muon_ke)*1000, (Emu_rec)*1000)
+                hdict_sig["fractional residual"].Fill((Emu_rec - (muon_ke))/(muon_ke), (muon_ke))
+                hdict_sig["omega(rec) and q"].Fill((entry.Enu - (Emu_rec + 0.105))*1000,  q*1000)
+                hdict_sig["omega (MeV) vs. q (MeV/C)"].Fill(omega*1000, q*1000)
+                hdict_sig["omega (MeV) vs. q (MeV/c) (rec)"].Fill((entry.Enu - (Emu_rec + 0.105))*1000,  q*1000)
+                hdict_sig["true neutrino angles"].Fill(math.atan((true_nup[0])/true_nup[2]) , math.atan((true_nup[1])/true_nup[2]))
+                hdict_sig["reconstructed neutrino angle"].Fill(math.atan((reco_FS[0])/reco_FS[2]) , math.atan((reco_FS[1])/reco_FS[2]))
+                hdict_sig["reco.neutrino angle (no neutron)"].Fill(math.atan((reco_FS_neu[0])/reco_FS_neu[2]) , math.atan((reco_FS_neu[1])/reco_FS_neu[2]))
+                hdict_sig["reco. neutrino angle (signal proton threshold)"].Fill(math.atan((reco_thresh[0])/reco_thresh[2]) , math.atan((reco_thresh[1])/reco_thresh[2]))
+                hdict_sig["reco. assumption 1 signal wrst. beam dump"].Fill(math.cos(reco_FS.Angle(beamdump_nu)))
+                hdict_sig["reco. assumption 2 wrst. beam dump"].Fill(math.cos(reco_FS_neu.Angle(beamdump_nu)))
+                hdict_sig["reco. assumption 3 wrst. beam dump"].Fill(math.cos(reco_thresh.Angle(beamdump_nu)))
+                hdict_sig["muon energy vs. beam dump angle (sig 1) "].Fill(muon_e*1000, math.cos(reco_FS.Angle(beamdump_nu)))
+                hdict_sig["muon energy vs. beam dump angle (sig 2) "].Fill(muon_e*1000, math.cos(reco_FS_neu.Angle(beamdump_nu)))
+                hdict_sig["muon energy vs. beam dump angle (sig 3) "].Fill(muon_e*1000, math.cos(reco_thresh.Angle(beamdump_nu)))
+                hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 1)"].Fill(emu_thresh*1000, math.cos(reco1_sum.Angle(beamdump_nu)))
+                hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 2)"].Fill(emu_thresh*1000, math.cos(reco2_sum.Angle(beamdump_nu)))
+                hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 3)"].Fill(emu_thresh*1000, math.cos(reco3_sum.Angle(beamdump_nu)))
+            else:
+                #background fills
+                hdict_bkg["neutrino angle wrst. Z"].Fill(math.atan((true_nup[0])/true_nup[2]), math.atan((true_nup[1])/true_nup[2]))
+                hdict_bkg["reco neutrino angle"].Fill(math.atan((reco_FS[0])/reco_FS[2]), math.atan((reco_FS[1])/reco_FS[2]))
+                hdict_bkg["reco. neutrino angle (no neutron)"].Fill(math.atan((reco_FS_neu[0])/reco_FS_neu[2]) , math.atan((reco_FS_neu[1])/reco_FS_neu[2]))
+                hdict_bkg["reco. neutrino angle (proton threshold)"].Fill(math.atan((reco_thresh[0])/reco_thresh[2]) , math.atan((reco_thresh[1])/reco_thresh[2]))
+                hdict_bkg["beam dump angle (reco. 1)"].Fill(math.cos(reco_FS.Angle(beamdump_nu)))
+                hdict_bkg["beam dump angle (reco. 2)"].Fill(math.cos(reco_FS_neu.Angle(beamdump_nu)))
+                hdict_bkg["beam dump angle (reco. 3)"].Fill(math.cos(reco_thresh.Angle(beamdump_nu)))
+                hdict_bkg["beam dump angle (muon thresh reco. 1)"].Fill(math.cos(reco1_thresh.Angle(beamdump_nu)))
+                hdict_bkg["beam dump angle (muon thresh reco. 2)"].Fill(math.cos(reco2_thresh.Angle(beamdump_nu)))
+                hdict_bkg["beam dump angle (muon thresh reco. 3)"].Fill(math.cos(reco3_thresh.Angle(beamdump_nu)))
+                hdict_bkg["muon energy vs. beam dump angle (1) "].Fill(muon_e*1000, math.cos(reco_FS.Angle(beamdump_nu)))
+                hdict_bkg["muon energy vs. beam dump angle (2) "].Fill(muon_e*1000, math.cos(reco_FS_neu.Angle(beamdump_nu)))
+                hdict_bkg["muon energy vs. beam dump angle (3)"].Fill(muon_e*1000, math.cos(reco_thresh.Angle(beamdump_nu)))
+                hdict_bkg["muon energy (with threshold) vs. beamdump angle (1)"].Fill(emu_thresh*1000, math.cos(reco1_sum.Angle(beamdump_nu)))
+                hdict_bkg["muon energy (with threshold) vs. beamdump angle (2)"].Fill(emu_thresh*1000, math.cos(reco2_sum.Angle(beamdump_nu)))
+                hdict_bkg["muon energy (with threshold) vs. beamdump angle (3)"].Fill(emu_thresh*1000, math.cos(reco3_sum.Angle(beamdump_nu)))
+    return n_signal
 
 if __name__ == "__main__":
-    bf = ROOT.TFile("/icarus/data/users/marshalc/kdar.root")
-       tree = bf.Get( "tree" )
-       for entry in tree:
-           is_cc = False
-           muon_E = None
-                     
-           sig_px = entry.nuPx
-           sig_py = entry.nuPy
-           sig_pz = entry.nuPz
-           beamdump_nu = ROOT.TVector3(sig_px, sig_py, sig_pz).Unit()       
-           beam_thresh = ROOT.TVector3(0., 0., 0.)
-           
-           if entry.Enu < 0.5:
-               beam_thresh[0] += entry.nuPx
-               beam_thresh[1] += entry.nuPy
-               beam_thresh[2] += entry.nuPz         
                
     #background plots
     hdict_bkg = {}
@@ -270,6 +236,13 @@ if __name__ == "__main__":
     hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 1)"] = ROOT.TH2D("muon energy (with threshold) vs. beamdump angle (sig 1)", ";E_{#mu} MeV ;cos(#theta_{#nu})", 136, 80, 250., 136, -1., -1.)
     hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 2)"] = ROOT.TH2D("muon energy (with threshold) vs. beamdump angle (sig 2)", ";E_{#mu} MeV ;cos(#theta_{#nu})", 136, 80, 250., 136, -1., -1.)
     hdict_sig["muon energy (with threshold) vs. beamdump angle (sig 3)"] = ROOT.TH2D("muon energy (with threshold) vs. beamdump angle (sig 3)", ";E_{#mu} MeV ;cos(#theta_{#nu})", 136, 80, 250., 136, -1., -1.)
+
+    # run it
+    tf = ROOT.TFile( filename )
+    tree = tf.Get( "tree" )
+    n_signal = TTree_loop( tree, hdict_sig, hdict_bkg )
+
+    norm = 1.*sig_per_yr / n_signal
           
     # Make an output file for the histograms
     tfout = ROOT.TFile( "plots.root", "RECREATE" ) # overwrite the file if it already exists
